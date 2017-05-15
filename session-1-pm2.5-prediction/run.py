@@ -8,13 +8,9 @@ if __name__ == "__main__":
     data = pd.read_csv('./data/train.csv', encoding="big5")
     features = data.groupby('´ú¶µ')
     pm_25 = data[data['´ú¶µ'] == 'PM2.5'].loc[:, '0':'23'].apply(pd.to_numeric)
-    print(pm_25.describe())
-    # y = pm_25.describe().loc['mean', :]
-
-    # for (feature, group) in features:
-    #     print(feature)
-    #     values = group.loc[:, '0':'23']
-    #     if feature == 'RAINFALL':
-    #         values = values.replace('NR', '0')
-    #     means = values.apply(pd.to_numeric).describe().loc['mean', :]
-    #     print(means.describe())
+    x = pd.Series()
+    y = pd.Series()
+    for hour in pm_25:
+        x = x.append(pm_25[hour].map(lambda yy: hour), ignore_index=True)
+        y = y.append(pm_25[hour].map(lambda yy: yy), ignore_index=True)
+    print(type(x))
