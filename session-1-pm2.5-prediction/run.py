@@ -10,11 +10,13 @@ from task_io import TaskIO
 
 class Session1TaskIO(TaskIO):
     def export_prediction(self, data):
-        print(data.describe())
+        print('===== Exporting prediction result... =====')
         data.to_csv(self.result, index=False)
 
 
 if __name__ == "__main__":
+    import warnings
+    warnings.filterwarnings(action="ignore", module="scipy", message="^internal gelsd")
     task_io = Session1TaskIO(
         train='./data/train.csv',
         test='./data/test_X.csv',
@@ -32,29 +34,41 @@ if __name__ == "__main__":
     #     x = x.append(pm_25[hour].map(lambda yy: hour), ignore_index=True)
     #     y = y.append(pm_25[hour].map(lambda yy: yy), ignore_index=True)
 
-    # x = pd.Series()
-    # y = pd.Series()
+    x = pd.Series()
+    y = pd.Series()
 
-    # feature = data[data['´ú¶µ'] == 'PM10'].loc[:, '0':'23'].apply(pd.to_numeric)
-    # outcome = pm_25
-    # for hour in feature:
-    #     x = x.append(feature[hour].map(lambda elem: elem), ignore_index=True)
+    feature = training_data[training_data['´ú¶µ'] == 'PM10'].loc[:, '0':'23'].apply(pd.to_numeric)
+    outcome = pm_25
+    for hour in feature:
+        x = x.append(feature[hour].map(lambda elem: elem), ignore_index=True)
 
-    # for hour in outcome:
-    #     y = y.append(outcome[hour].map(lambda elem: elem), ignore_index=True)
+    for hour in outcome:
+        y = y.append(outcome[hour].map(lambda elem: elem), ignore_index=True)
 
-    # from sklearn.linear_model import LinearRegression
-    # model = LinearRegression(fit_intercept=True)
+    from sklearn.linear_model import LinearRegression
+    model = LinearRegression(fit_intercept=True)
 
-    # model.fit(x[:, np.newaxis], y)
+    model.fit(x[:, np.newaxis], y)
 
-    # xfit = np.linspace(0, feature.max().max(), 1000)
-    # yfit = model.predict(xfit[:, np.newaxis])
-    # print(xfit)
+    xfit = np.linspace(0, feature.max().max(), 1000)
+    yfit = model.predict(xfit[:, np.newaxis])
 
-    result = pd.DataFrame(columns=['id', 'value'])
-    result = result.append(
-        pd.DataFrame([['id_0', 0]], columns=['id', 'value']),
+    pm_10 = testing_data[testing_data[1] == 'PM2.5'].iloc[:, 2:11].apply(pd.to_numeric)
+    prediction_from_pm_10 = pm_10.apply(
+        lambda row: row[10],
+        axis=1
+    )
+    prediction_from_pm_10 = model.predict(prediction_from_pm_10[:, np.newaxis])
+    prediction_from_pm_10 = prediction_from_pm_10.astype('int')
+
+    ids = testing_data[testing_data[1] == 'PM2.5'].iloc[:, 0]
+    result = pd.concat(
+        [
+            ids.to_frame('id').reset_index(drop=True),
+            pd.DataFrame.from_items([('value', prediction_from_pm_10)]).reset_index(drop=True)
+        ],
+        axis=1,
         ignore_index=True
     )
+    result.columns = ['id', 'value']
     task_io.export_prediction(result)
