@@ -10,8 +10,12 @@ from task_io import TaskIO
 
 class Session1TaskIO(TaskIO):
     def export_prediction(self, data):
-        print('===== Exporting prediction result... =====')
+        print('\n===== Exporting prediction result... =====')
         super().export_prediction(data)
+
+
+def rmse(predictions, targets):
+    return np.sqrt(((predictions - targets) ** 2).mean())
 
 
 if __name__ == "__main__":
@@ -22,7 +26,7 @@ if __name__ == "__main__":
     # ===== Importing training and testing data =====
     task_io = Session1TaskIO(
         train='./data/train.csv',
-        test='./data/test_X.csv',
+        test='./data/test_XX.csv',
         result='./data/result.csv'
     )
     training_data = task_io.import_training_data()
@@ -53,15 +57,23 @@ if __name__ == "__main__":
     yfit = model.predict(xfit[:, np.newaxis])
 
     # ===== Prediction =====
-    pm_10 = testing_data[testing_data[1] == 'PM2.5'].iloc[:, 2:11].apply(pd.to_numeric)
+    pm_10 = testing_data[testing_data[1] == 'PM10'].iloc[:, 2:11].apply(pd.to_numeric)
+    pm_25_answer = testing_data[testing_data[1] == 'PM2.5'].iloc[:, 11].apply(pd.to_numeric)
     prediction_from_pm_10 = pm_10.apply(
         lambda row: row[10],
         axis=1
     )
-    prediction_from_pm_10 = model.predict(prediction_from_pm_10[:, np.newaxis])
-    prediction_from_pm_10 = prediction_from_pm_10.astype('int')
+    prediction_from_pm_10 = model.predict(prediction_from_pm_10[:, np.newaxis]).astype('int')
 
-    ids = testing_data[testing_data[1] == 'PM2.5'].iloc[:, 0]
+    print("\n===== prediction_from_pm_10 =====")
+    print(prediction_from_pm_10)
+    print("\n===== pm_2.5_answer =====")
+    print(pm_25_answer.values)
+    print("\n===== RMSE =====")
+    print(rmse(prediction_from_pm_10, pm_25_answer))
+
+    # ===== Exporting prediction result =====
+    ids = testing_data[testing_data[1] == 'PM10'].iloc[:, 0]
     result = pd.concat(
         [
             ids.to_frame('id').reset_index(drop=True),
@@ -72,5 +84,4 @@ if __name__ == "__main__":
     )
     result.columns = ['id', 'value']
 
-    # ===== Exporting prediction result
     task_io.export_prediction(result)
