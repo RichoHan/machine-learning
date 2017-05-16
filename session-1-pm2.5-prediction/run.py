@@ -11,12 +11,15 @@ from task_io import TaskIO
 class Session1TaskIO(TaskIO):
     def export_prediction(self, data):
         print('===== Exporting prediction result... =====')
-        data.to_csv(self.result, index=False)
+        super().export_prediction(data)
 
 
 if __name__ == "__main__":
+    # ===== Suppressing warnings =====
     import warnings
     warnings.filterwarnings(action="ignore", module="scipy", message="^internal gelsd")
+
+    # ===== Importing training and testing data =====
     task_io = Session1TaskIO(
         train='./data/train.csv',
         test='./data/test_X.csv',
@@ -25,14 +28,9 @@ if __name__ == "__main__":
     training_data = task_io.import_training_data()
     testing_data = task_io.import_testing_data()
 
+    # ===== Data manipulation =====
     features = training_data.groupby('´ú¶µ')
     pm_25 = training_data[training_data['´ú¶µ'] == 'PM2.5'].loc[:, '0':'23'].apply(pd.to_numeric)
-    # print(pm_25.describe())
-    # x = pd.Series()
-    # y = pd.Series()
-    # for hour in pm_25:
-    #     x = x.append(pm_25[hour].map(lambda yy: hour), ignore_index=True)
-    #     y = y.append(pm_25[hour].map(lambda yy: yy), ignore_index=True)
 
     x = pd.Series()
     y = pd.Series()
@@ -45,14 +43,16 @@ if __name__ == "__main__":
     for hour in outcome:
         y = y.append(outcome[hour].map(lambda elem: elem), ignore_index=True)
 
-    from sklearn.linear_model import LinearRegression
-    model = LinearRegression(fit_intercept=True)
+    # ===== Fitting linear model =====
+    from linear_model import LinearRegression
+    model = LinearRegression()
 
     model.fit(x[:, np.newaxis], y)
 
     xfit = np.linspace(0, feature.max().max(), 1000)
     yfit = model.predict(xfit[:, np.newaxis])
 
+    # ===== Prediction =====
     pm_10 = testing_data[testing_data[1] == 'PM2.5'].iloc[:, 2:11].apply(pd.to_numeric)
     prediction_from_pm_10 = pm_10.apply(
         lambda row: row[10],
@@ -71,4 +71,6 @@ if __name__ == "__main__":
         ignore_index=True
     )
     result.columns = ['id', 'value']
+
+    # ===== Exporting prediction result
     task_io.export_prediction(result)
