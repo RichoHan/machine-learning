@@ -1,17 +1,10 @@
 #!/usr/bin/python
 # -*- coding: big5 -*-
-
 """Session 1 Linear Regression"""
 import numpy as np
 import pandas as pd
 
 from task_io import TaskIO
-
-
-class Session1TaskIO(TaskIO):
-    def export_prediction(self, data):
-        print('\n===== Exporting prediction result... =====')
-        super().export_prediction(data)
 
 
 def rmse(predictions, targets):
@@ -24,7 +17,7 @@ if __name__ == "__main__":
     warnings.filterwarnings(action="ignore", module="scipy", message="^internal gelsd")
 
     # ===== Importing training and testing data =====
-    task_io = Session1TaskIO(
+    task_io = TaskIO(
         train='./data/train.csv',
         test='./data/test_X.csv',
         result='./data/result.csv'
@@ -46,8 +39,8 @@ if __name__ == "__main__":
         y = y.append(outcome[hour].map(lambda elem: elem), ignore_index=True)
 
     # ===== Fitting linear model =====
-    from linear_model import LinearRegression2
-    model = LinearRegression2()
+    from linear_model import LinearRegression
+    model = LinearRegression()
 
     model.fit(x.values, y.values)
 
