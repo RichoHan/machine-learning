@@ -5,6 +5,8 @@ from sklearn.linear_model import LinearRegression
 class LinearRegression2(LinearRegression):
     def __init__(self):
         super().__init__()
+        self.bias = 1
+        self.weight = 1
 
     def _gradient_descent(self, eta, x, y, end_point=0.0001, max_iter=10000):
         """Gradient descent is used to calculate the best fitting function: y = b + wx
@@ -29,19 +31,22 @@ class LinearRegression2(LinearRegression):
         size = x.shape[0]
         converged = False
         iteration = 0
-        b, w = 0, 0
+        b, w = 1, 1
 
         # Goodness of function
-        loss = sum([(b + w * x[i] - y[i])**2 for i in range(size)])
+        def diff(x, y):
+            return y - (b + w * x)
+        loss = sum([diff(x[i], y[i])**2 for i in range(size)])
         print("x.shape: {0}".format(x.shape))
         print("size: {0}".format(size))
         print("loss: {0}".format(loss))
 
         # Converge iteration
         while not converged and iteration < max_iter:
+            # print("----- Iteration {0} -----".format(iteration))
             # For each training sample, compute the gradient (d/d_theta j(theta))
-            grad_0 = (1.0 / size) * sum([(b + (w * x[i]) - y[i]) for i in range(size)]) 
-            grad_1 = (1.0 / size) * sum([(b + (w * x[i]) - y[i]) * x[i] for i in range(size)])
+            grad_0 = sum(2 * [diff(x[i], y[i]) for i in range(size)])
+            grad_1 = sum(2 * [diff(x[i], y[i]) * (-x[i]) for i in range(size)])
 
             # Update bias and weight with eta
             temp_b = b - eta * grad_0
@@ -50,9 +55,13 @@ class LinearRegression2(LinearRegression):
             w = temp_w
 
             # Compute the error again
-            error = sum([(b + w * x[i] - y[i])**2 for i in range(size)])
+            error = sum([diff(x[i], y[i])**2 for i in range(size)])
+            # print("error: {0}".format(error))
+            # print("loss: {0}".format(loss))
+            # print("abs(error - loss): {0}".format(abs(error - loss)))
 
             if abs(error - loss) <= end_point:
+                print("Converged at iteration {0}".format(iteration))
                 converged = True
 
             loss = error
@@ -73,14 +82,14 @@ class LinearRegression2(LinearRegression):
         self : returns an instance of self.
         """
 
-        eta = 0.01  # learning rate
+        eta = 0.00000001  # learning rate
         end_point = 0.01  # convergence criteria
 
         # call gredient decent, and get intercept(=bias) and slope(=weight)
-        bias, weight = self._gradient_descent(eta, X, y, end_point, max_iter=1000)
-        print('bias = {0}, weight = {1}'.format(bias, weight))
+        self.bias, self.weight = self._gradient_descent(eta, X, y, end_point, max_iter=100)
+        print('bias = {0}, weight = {1}'.format(self.bias, self.weight))
 
-        super().fit(X, y)
+        # super().fit(X.reshape(X.shape[0], 1), y.reshape(y.shape[0], 1))
         return self
 
     def predict(self, X):
@@ -97,5 +106,5 @@ class LinearRegression2(LinearRegression):
             Returns predicted values.
         """
         # return self._decision_function(X)
-        y = 1 + 5 * X
+        y = self.bias + self.weight * X
         return y

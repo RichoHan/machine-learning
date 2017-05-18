@@ -26,7 +26,7 @@ if __name__ == "__main__":
     # ===== Importing training and testing data =====
     task_io = Session1TaskIO(
         train='./data/train.csv',
-        test='./data/test_XX.csv',
+        test='./data/test_X.csv',
         result='./data/result.csv'
     )
     training_data = task_io.import_training_data()
@@ -49,37 +49,37 @@ if __name__ == "__main__":
     from linear_model import LinearRegression2
     model = LinearRegression2()
 
-    model.fit(x[:, np.newaxis], y)
+    model.fit(x.values, y.values)
 
-    # xfit = np.linspace(0, feature.max().max(), 1000)
-    # yfit = model.predict(xfit[:, np.newaxis])
+    xfit = np.linspace(0, feature.max().max(), 1000)
+    yfit = model.predict(xfit[:, np.newaxis])
 
     # ===== Prediction =====
-    # pm_10 = testing_data[testing_data[1] == 'PM10'].iloc[:, 2:11].apply(pd.to_numeric)
+    pm_10 = testing_data[testing_data[1] == 'PM10'].iloc[:, 2:11].apply(pd.to_numeric)
     # pm_25_answer = testing_data[testing_data[1] == 'PM2.5'].iloc[:, 11].apply(pd.to_numeric)
-    # prediction_from_pm_10 = pm_10.apply(
-    #     lambda row: row[10],
-    #     axis=1
-    # )
-    # prediction_from_pm_10 = model.predict(prediction_from_pm_10[:, np.newaxis]).astype('int')
+    prediction_from_pm_10 = pm_10.apply(
+        lambda row: row[10],
+        axis=1
+    )
+    prediction_from_pm_10 = model.predict(prediction_from_pm_10).astype('int')
 
     # print("\n===== prediction_from_pm_10 =====")
-    # print(prediction_from_pm_10)
+    # print(prediction_from_pm_10.values)
     # print("\n===== pm_2.5_answer =====")
     # print(pm_25_answer.values)
     # print("\n===== RMSE =====")
-    # print(rmse(prediction_from_pm_10, pm_25_answer))
+    # print(rmse(prediction_from_pm_10.values, pm_25_answer))
 
     # ===== Exporting prediction result =====
-    # ids = testing_data[testing_data[1] == 'PM10'].iloc[:, 0]
-    # result = pd.concat(
-    #     [
-    #         ids.to_frame('id').reset_index(drop=True),
-    #         pd.DataFrame.from_items([('value', prediction_from_pm_10)]).reset_index(drop=True)
-    #     ],
-    #     axis=1,
-    #     ignore_index=True
-    # )
-    # result.columns = ['id', 'value']
+    ids = testing_data[testing_data[1] == 'PM10'].iloc[:, 0]
+    result = pd.concat(
+        [
+            ids.to_frame('id').reset_index(drop=True),
+            pd.DataFrame.from_items([('value', prediction_from_pm_10)]).reset_index(drop=True)
+        ],
+        axis=1,
+        ignore_index=True
+    )
+    result.columns = ['id', 'value']
 
-    # task_io.export_prediction(result)
+    task_io.export_prediction(result)
