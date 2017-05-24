@@ -11,7 +11,7 @@ def rmse(predictions, targets):
     return np.sqrt(((predictions - targets) ** 2).mean())
 
 
-if __name__ == "__main__":
+def main():
     # ===== Suppressing warnings =====
     import warnings
     warnings.filterwarnings(action="ignore", module="scipy", message="^internal gelsd")
@@ -26,33 +26,40 @@ if __name__ == "__main__":
     testing_data = task_io.import_testing_data()
 
     # ===== Data manipulation =====
-    features = training_data.groupby('´ú¶µ')
-    for feature, feature_data in features:
-        if feature == 'PM2.5':
-            pm_25 = feature_data.loc[:, '0':'23'].apply(pd.to_numeric)
-            window_width = pm_25.shape[1] - 9
-            x = np.zeros(shape=(pm_25.shape[0] * window_width, 9))
-            y = np.zeros(shape=(pm_25.shape[0] * window_width, 1))
-            for i in range(0, 15):
-                samples = pm_25.loc[:, str(i):str(i + 8)].values
-                answers = pm_25.loc[:, str(i + 9)].values
-                for index, sample in np.ndenumerate(samples):
-                    x[samples.shape[0] * i + index[0]][index[1]] = sample
-                for index, answer in np.ndenumerate(answers):
-                    y[samples.shape[0] * i + index[0]] = answer
+    selection = ['PM2.5', 'PM10']
+    features = training_data.loc[training_data['´ú¶µ'].isin(selection)].reset_index(drop=True)
+    size = int(features.shape[0] / len(selection))
+    max_width = 15
+    x = np.zeros(shape=(size * max_width, 9 * len(selection)))
+    y = np.zeros(shape=(size * max_width, 1))
+    for index, row in features.iterrows():
+        for i in range(0, max_width):
+            samples = row.loc[str(i):str(i + 8)].apply(pd.to_numeric).values
+            for pivot, sample in np.ndenumerate(samples):
+                x[int(index / len(selection)) * 15 + i][(index % len(selection)) * 9 + pivot] = sample
+            if row['´ú¶µ'] == 'PM2.5':
+                answer = row.loc[str(i + 9):str(i + 9)].apply(pd.to_numeric).values
+                y[int(index / len(selection)) * 15 + i] = answer
 
     # ===== Fitting linear model =====
     from linear_model import LinearRegression
     model = LinearRegression()
-
     model.fit(x, y)
 
     # ===== Prediction =====
-    testing_features = testing_data.groupby(1)
-    for feature, feature_data in testing_features:
-        if feature == 'PM2.5':
-            pm_25 = feature_data.iloc[:, 2:11].apply(pd.to_numeric).values
-    prediction = np.apply_along_axis(model.predict, 1, pm_25)
+    testing_features = testing_data.loc[testing_data[1].isin(selection)].reset_index(drop=True)
+    size = int(testing_features.shape[0] / len(selection))
+    xx = np.zeros(shape=(size, 9 * len(selection)))
+    for index, row in testing_features.iterrows():
+        samples = row.iloc[2:11].apply(pd.to_numeric)
+        for pivot, sample in np.ndenumerate(samples):
+            xx[int(index / len(selection))][(index % len(selection)) * 9 + pivot] = sample
+    prediction = np.apply_along_axis(model.predict, 1, xx)
+    # testing_features = testing_data.groupby(1)
+    # for feature, feature_data in testing_features:
+    #     if feature == 'PM2.5':
+    #         pm_25 = feature_data.iloc[:, 2:11].apply(pd.to_numeric).values
+    # prediction = np.apply_along_axis(model.predict, 1, pm_25)
 
     # ===== Exporting prediction result =====
     ids = testing_data[testing_data[1] == 'PM10'].iloc[:, 0]
@@ -67,3 +74,7 @@ if __name__ == "__main__":
     result.columns = ['id', 'value']
 
     task_io.export_prediction(result)
+
+
+if __name__ == "__main__":
+    main()

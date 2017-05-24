@@ -76,7 +76,7 @@ class LinearRegression():
         self : returns an instance of self.
         """
 
-        eta = 0.00000001  # learning rate
+        eta = 0.000000005  # learning rate
         end_point = 0.01  # convergence criteria
 
         # Call gredient decent, and get intercept(=bias) and slope(=weight)
