@@ -27,48 +27,39 @@ if __name__ == "__main__":
 
     # ===== Data manipulation =====
     features = training_data.groupby('´ú¶µ')
-    pm_25 = training_data[training_data['´ú¶µ'] == 'PM2.5'].loc[:, '0':'23'].apply(pd.to_numeric)
-
-    x = pd.Series()
-    y = pd.Series()
-
-    feature = training_data[training_data['´ú¶µ'] == 'PM10'].loc[:, '0':'23'].apply(pd.to_numeric)
-    outcome = pm_25
-    for hour in feature:
-        x = x.append(feature[hour].map(lambda elem: elem), ignore_index=True)
-        y = y.append(outcome[hour].map(lambda elem: elem), ignore_index=True)
+    for feature, feature_data in features:
+        if feature == 'PM2.5':
+            pm_25 = feature_data.loc[:, '0':'23'].apply(pd.to_numeric)
+            window_width = pm_25.shape[1] - 9
+            x = np.zeros(shape=(pm_25.shape[0] * window_width, 9))
+            y = np.zeros(shape=(pm_25.shape[0] * window_width, 1))
+            for i in range(0, 15):
+                samples = pm_25.loc[:, str(i):str(i + 8)].values
+                answers = pm_25.loc[:, str(i + 9)].values
+                for index, sample in np.ndenumerate(samples):
+                    x[samples.shape[0] * i + index[0]][index[1]] = sample
+                for index, answer in np.ndenumerate(answers):
+                    y[samples.shape[0] * i + index[0]] = answer
 
     # ===== Fitting linear model =====
     from linear_model import LinearRegression
     model = LinearRegression()
 
-    model.fit(x.values, y.values)
-
-    xfit = np.linspace(0, feature.max().max(), 1000)
-    yfit = model.predict(xfit[:, np.newaxis])
+    model.fit(x, y)
 
     # ===== Prediction =====
-    pm_10 = testing_data[testing_data[1] == 'PM10'].iloc[:, 2:11].apply(pd.to_numeric)
-    # pm_25_answer = testing_data[testing_data[1] == 'PM2.5'].iloc[:, 11].apply(pd.to_numeric)
-    prediction_from_pm_10 = pm_10.apply(
-        lambda row: row[10],
-        axis=1
-    )
-    prediction_from_pm_10 = model.predict(prediction_from_pm_10).astype('int')
-
-    # print("\n===== prediction_from_pm_10 =====")
-    # print(prediction_from_pm_10.values)
-    # print("\n===== pm_2.5_answer =====")
-    # print(pm_25_answer.values)
-    # print("\n===== RMSE =====")
-    # print(rmse(prediction_from_pm_10.values, pm_25_answer))
+    testing_features = testing_data.groupby(1)
+    for feature, feature_data in testing_features:
+        if feature == 'PM2.5':
+            pm_25 = feature_data.iloc[:, 2:11].apply(pd.to_numeric).values
+    prediction = np.apply_along_axis(model.predict, 1, pm_25)
 
     # ===== Exporting prediction result =====
     ids = testing_data[testing_data[1] == 'PM10'].iloc[:, 0]
     result = pd.concat(
         [
             ids.to_frame('id').reset_index(drop=True),
-            pd.DataFrame.from_items([('value', prediction_from_pm_10)]).reset_index(drop=True)
+            pd.DataFrame.from_items([('value', prediction.flatten())]).reset_index(drop=True)
         ],
         axis=1,
         ignore_index=True

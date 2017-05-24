@@ -1,11 +1,10 @@
 "Linear model for assignment 1."
+import numpy as np
 
 
 class LinearRegression():
     def __init__(self):
         super().__init__()
-        self.bias = 1
-        self.weight = 1
 
     def _gradient_descent(self, eta, x, y, end_point=0.0001, max_iter=10000):
         """Gradient descent is used to calculate the best fitting function: y = b + wx
@@ -27,15 +26,17 @@ class LinearRegression():
         tuple: A pair of intercept(=bias) and slope(=weight).
         """
         # Initialization
-        size = x.shape[0]
+        size, width = x.shape
+        print(size, width)
         converged = False
         iteration = 0
-        b, w = 1, 1
+        b, w = 1, np.random.rand(1, width)
 
         # Goodness of function
         def diff(x, y):
-            return y - (b + w * x)
+            return y - (b + np.dot(w, x))
         loss = sum([diff(x[i], y[i])**2 for i in range(size)])
+        print(loss)
 
         # Converge iteration
         while not converged and iteration < max_iter:
@@ -58,6 +59,7 @@ class LinearRegression():
 
             loss = error
             iteration = iteration + 1
+            print(loss)
         return b, w
 
     def fit(self, X, y):
@@ -78,7 +80,7 @@ class LinearRegression():
         end_point = 0.01  # convergence criteria
 
         # Call gredient decent, and get intercept(=bias) and slope(=weight)
-        self.bias, self.weight = self._gradient_descent(eta, X, y, end_point, max_iter=100)
+        self.bias, self.weight = self._gradient_descent(eta, X, y, end_point, max_iter=10000)
         print('bias = {0}, weight = {1}'.format(self.bias, self.weight))
 
         return self
@@ -97,5 +99,5 @@ class LinearRegression():
             Returns predicted values.
         """
         # Calculate predictions using fitted model
-        y = self.bias + self.weight * X
+        y = self.bias + np.dot(self.weight, X)
         return y
