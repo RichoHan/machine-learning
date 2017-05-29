@@ -7,7 +7,7 @@ import pandas as pd
 from task_io import TaskIO
 
 
-def rmse(predictions, targets):
+def score(predictions, targets):
     return np.sqrt(((predictions - targets) ** 2).mean())
 
 
@@ -39,6 +39,22 @@ def get_processed_testing(testing_data, selection, window_width=5):
     return x
 
 
+def train_test_split(x, y, test_split=0, k=10):
+    X_splits = np.split(x, k)
+    X_train = None
+    y_splits = np.split(y, k)
+    y_train = None
+
+    for i in range(0, k):
+        if i != test_split:
+            X_train = X_splits[i] if X_train is None else np.concatenate((X_train, X_splits[i]), axis=0)
+            y_train = y_splits[i] if y_train is None else np.concatenate((y_train, y_splits[i]), axis=0)
+
+    X_test = X_splits[test_split]
+    y_test = y_splits[test_split]
+    return X_train, X_test, y_train, y_test
+
+
 def main():
     # ===== Suppressing warnings =====
     import warnings
@@ -48,39 +64,65 @@ def main():
     task_io = TaskIO(
         train='./data/train.csv',
         test='./data/test_X.csv',
-        result='./data/result.csv'
+        result='./data/result.csv',
+        validation_path='./data/validation.csv'
     )
     training_data = task_io.import_training_data()
-    testing_data = task_io.import_testing_data()
+    # testing_data = task_io.import_testing_data()
 
     # ===== Data Processing =====
     # selection = ['PM2.5', 'PM10', 'AMB_TEMP', 'O3']
-    selection = ['PM2.5']
+    selection = ['PM2.5', 'PM10']
     window_width = 5
     x, y = get_processed_training(training_data, selection, window_width=window_width)
 
-    # ===== Fitting linear model =====
+    # ===== Cross Validation =====
+    training_scores = list()
+    testing_scores = list()
+    regularizations = list()
+
     from linear_model import LinearRegression
-    model = LinearRegression()
-    model.fit(x, y)
+    for i in range(5):
+        for split in range(10):
+            X_train, X_test, y_train, y_test = train_test_split(x, y, test_split=split)
+            regularization = 10 ** i
+            model = LinearRegression()
+            model.fit(X_train, y_train, regularization)
+            training_prediction = np.apply_along_axis(model.predict, 1, X_train)
+            testing_prediction = np.apply_along_axis(model.predict, 1, X_test)
 
-    # ===== Prediction =====
-    testing_x = get_processed_testing(testing_data, selection)
-    prediction = np.apply_along_axis(model.predict, 1, testing_x)
+            training_scores.append(score(training_prediction, y_train))
+            testing_scores.append(score(testing_prediction, y_test))
+            regularizations.append(regularization)
 
-    # ===== Exporting prediction result =====
-    ids = testing_data[testing_data[1] == 'PM10'].iloc[:, 0]
-    result = pd.concat(
-        [
-            ids.to_frame('id').reset_index(drop=True),
-            pd.DataFrame.from_items([('value', prediction.flatten())]).reset_index(drop=True)
-        ],
-        axis=1,
-        ignore_index=True
-    )
-    result.columns = ['id', 'value']
+    task_io.export_validation(pd.DataFrame({
+        'regularization': regularizations,
+        'training scores': training_scores,
+        'testing scores': testing_scores
+    }))
 
-    task_io.export_prediction(result)
+    # # ===== Fitting linear model =====
+    # from linear_model import LinearRegression
+    # model = LinearRegression()
+    # model.fit(x, y)
+
+    # # ===== Prediction =====
+    # testing_x = get_processed_testing(testing_data, selection)
+    # prediction = np.apply_along_axis(model.predict, 1, testing_x)
+
+    # # ===== Exporting prediction result =====
+    # ids = testing_data[testing_data[1] == 'PM10'].iloc[:, 0]
+    # result = pd.concat(
+    #     [
+    #         ids.to_frame('id').reset_index(drop=True),
+    #         pd.DataFrame.from_items([('value', prediction.flatten())]).reset_index(drop=True)
+    #     ],
+    #     axis=1,
+    #     ignore_index=True
+    # )
+    # result.columns = ['id', 'value']
+
+    # task_io.export_prediction(result)
 
 
 if __name__ == "__main__":
