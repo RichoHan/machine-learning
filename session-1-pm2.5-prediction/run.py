@@ -73,38 +73,44 @@ def main():
     # ===== Data Processing =====
     # selection = ['PM2.5', 'PM10', 'AMB_TEMP', 'O3']
     selection = ['PM2.5', 'PM10']
-    window_width = 5
-    x, y = get_processed_training(training_data, selection, window_width=window_width)
+    # window_width = 5
+    # x, y = get_processed_training(training_data, selection, window_width=window_width)
 
     # ===== Cross Validation =====
+    window_sizes = list()
     training_scores = list()
     testing_scores = list()
     regularizations = list()
 
     from linear_model import LinearRegression
-    for i in range(5):
+    for i in range(1, 10):
+        window_width = i
+        x, y = get_processed_training(training_data, selection, window_width=window_width)
         for split in range(10):
             X_train, X_test, y_train, y_test = train_test_split(x, y, test_split=split)
-            regularization = 10 ** i
+            regularization = 1000
             model = LinearRegression()
             model.fit(X_train, y_train, regularization)
             training_prediction = np.apply_along_axis(model.predict, 1, X_train)
             testing_prediction = np.apply_along_axis(model.predict, 1, X_test)
 
+            window_sizes.append(i)
             training_scores.append(score(training_prediction, y_train))
             testing_scores.append(score(testing_prediction, y_test))
             regularizations.append(regularization)
 
     task_io.export_validation(pd.DataFrame({
+        'window size': window_sizes,
         'regularization': regularizations,
-        'training scores': training_scores,
-        'testing scores': testing_scores
+        'training score': training_scores,
+        'testing score': testing_scores
     }))
 
     # # ===== Fitting linear model =====
     # from linear_model import LinearRegression
     # model = LinearRegression()
-    # model.fit(x, y)
+    # regularization = 1000
+    # model.fit(x, y, regularization)
 
     # # ===== Prediction =====
     # testing_x = get_processed_testing(testing_data, selection)

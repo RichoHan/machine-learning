@@ -1,4 +1,5 @@
 "Linear model for assignment 1."
+import math
 import numpy as np
 
 
@@ -29,13 +30,20 @@ class LinearRegression():
         size, width = x.shape
         print(size, width)
         converged = False
-        iteration = 0
+        iteration = 1
         b, w = 1, np.random.rand(1, width)
 
         # Goodness of function
         def diff(x, y):
             return y - (b + np.dot(w, x))
-        loss = sum([diff(x[i], y[i])**2 for i in range(size)]) + regularization * np.sum(np.apply_along_axis(lambda x: x**2, 0, w))
+
+        def loss_f(x, y, size):
+            return sum([diff(x[i], y[i])**2 for i in range(size)])
+
+        loss = loss_f(x, y, size) + regularization * np.sum(np.apply_along_axis(lambda x: x**2, 0, w))
+        # loss = diff(x[0], y[0])**2
+        gti_b = 0
+        gti_w = np.zeros(width)
 
         # Converge iteration
         while not converged and iteration < max_iter:
@@ -44,13 +52,15 @@ class LinearRegression():
             grad_1 = sum(2 * [diff(x[i], y[i]) * (-x[i]) for i in range(size)])
 
             # Update bias and weight with eta
-            temp_b = b - eta * grad_0
-            temp_w = w - eta * grad_1
+            gti_b += grad_0 ** 2
+            gti_w += grad_1 ** 2
+            temp_b = b - eta * (grad_0 / math.sqrt(gti_b))
+            temp_w = w - eta * (grad_1 / np.sqrt(gti_w))
             b = temp_b
             w = temp_w
 
             # Compute the error again
-            error = sum([diff(x[i], y[i])**2 for i in range(size)]) + regularization * np.sum(np.apply_along_axis(lambda x: x**2, 0, w))
+            error = loss_f(x, y, size) + regularization * np.sum(np.apply_along_axis(lambda x: x**2, 0, w))
 
             if error > loss:
                 print("Diverging at iteration {0}".format(iteration))
@@ -77,7 +87,7 @@ class LinearRegression():
         -------
         self : returns an instance of self.
         """
-        eta = 0.0000001  # learning rate
+        eta = 0.001  # learning rate
         end_point = 0.01  # convergence criteria
         converged = False
 
