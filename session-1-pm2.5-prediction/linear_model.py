@@ -37,8 +37,6 @@ class LinearRegression():
 
         # Goodness of function
         def diff(x, y):
-            print(x)
-            print(w)
             return y - (b + np.dot(w, x))
 
         def loss_f(x, y, size):
@@ -70,19 +68,19 @@ class LinearRegression():
             # b = temp_b
             # w = temp_w
 
-            # # Compute the error again
-            # error = loss_f(x, y, size) + regularization * np.sum(np.apply_along_axis(lambda x: x**2, 0, w))
+            # Compute the error again
+            error = loss_f(x, y, size) + regularization * np.sum(np.apply_along_axis(lambda x: x**2, 0, w))
 
-            # # if error > loss:
-            # if abs(error - loss) > 1e+7:
-            #     print("Diverged at iteration {0}".format(iteration))
-            #     # return b, w, converged
+            # if error > loss:
+            if abs(error - loss) > 1e+8:
+                print("Diverged at iteration {0}".format(iteration))
+                # return b, w, converged
 
-            # if abs(error - loss) <= end_point:
-            #     print("Converged at iteration {0}".format(iteration))
-            #     converged = True
+            if abs(error - loss) <= end_point:
+                print("Converged at iteration {0}".format(iteration))
+                converged = True
 
-            # loss = error
+            loss = error
             iteration = iteration + 1
         return b, w, True
 
@@ -104,11 +102,11 @@ class LinearRegression():
         converged = False
 
         # Call gredient decent, and get intercept(=bias) and slope(=weight)
-        # while not converged:
-        #     print("Setting eta to {0}".format(eta))
-        #     self.bias, self.weight, converged = self._gradient_descent(eta, X, y, end_point, max_iter=10, regularization=regularization)
-        #     eta = eta / 10
-        self.bias, self.weight, converged = self._gradient_descent(eta, X, y, end_point, max_iter=2, regularization=regularization)
+        while not converged:
+            print("Setting eta to {0}".format(eta))
+            self.bias, self.weight, converged = self._gradient_descent(eta, X, y, end_point, max_iter=100, regularization=regularization)
+            eta = eta / 2
+        # self.bias, self.weight, converged = self._gradient_descent(eta, X, y, end_point, max_iter=100, regularization=regularization)
         print('bias = {0}, weight = {1}'.format(self.bias, self.weight))
 
         return self

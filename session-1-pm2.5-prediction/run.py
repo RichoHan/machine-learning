@@ -68,68 +68,68 @@ def main():
         validation_path='./data/validation.csv'
     )
     training_data = task_io.import_training_data()
-    # testing_data = task_io.import_testing_data()
+    testing_data = task_io.import_testing_data()
 
     # ===== Data Processing =====
     # selection = ['PM2.5', 'PM10', 'AMB_TEMP', 'O3']
     selection = ['PM2.5', 'PM10']
-    # window_width = 5
-    # x, y = get_processed_training(training_data, selection, window_width=window_width)
+    window_width = 4
+    x, y = get_processed_training(training_data, selection, window_width=window_width)
 
-    # ===== Cross Validation =====
-    window_sizes = list()
-    training_scores = list()
-    testing_scores = list()
-    regularizations = list()
+    # # ===== Cross Validation =====
+    # window_sizes = list()
+    # training_scores = list()
+    # testing_scores = list()
+    # regularizations = list()
 
-    from linear_model import LinearRegression
-    for i in range(9, 10):
-        window_width = i
-        x, y = get_processed_training(training_data, selection, window_width=window_width)
-        for split in range(2):
-            print("Window width {0} at split {1}".format(window_width, split))
-            X_train, X_test, y_train, y_test = train_test_split(x, y, test_split=split)
-            regularization = 1000
-            model = LinearRegression()
-            model.fit(X_train, y_train, regularization)
-            training_prediction = np.apply_along_axis(model.predict, 1, X_train)
-            testing_prediction = np.apply_along_axis(model.predict, 1, X_test)
-
-            window_sizes.append(i)
-            training_scores.append(score(training_prediction, y_train))
-            testing_scores.append(score(testing_prediction, y_test))
-            regularizations.append(regularization)
-
-    task_io.export_validation(pd.DataFrame({
-        'window size': window_sizes,
-        'regularization': regularizations,
-        'training score': training_scores,
-        'testing score': testing_scores
-    }))
-
-    # # ===== Fitting linear model =====
     # from linear_model import LinearRegression
-    # model = LinearRegression()
-    # regularization = 1000
-    # model.fit(x, y, regularization)
+    # for i in range(1, 10):
+    #     window_width = i
+    #     x, y = get_processed_training(training_data, selection, window_width=window_width)
+    #     for split in range(10):
+    #         print("Window width {0} at split {1}".format(window_width, split))
+    #         X_train, X_test, y_train, y_test = train_test_split(x, y, test_split=split)
+    #         regularization = 1000
+    #         model = LinearRegression()
+    #         model.fit(X_train, y_train, regularization)
+    #         training_prediction = np.apply_along_axis(model.predict, 1, X_train)
+    #         testing_prediction = np.apply_along_axis(model.predict, 1, X_test)
 
-    # # ===== Prediction =====
-    # testing_x = get_processed_testing(testing_data, selection)
-    # prediction = np.apply_along_axis(model.predict, 1, testing_x)
+    #         window_sizes.append(i)
+    #         training_scores.append(score(training_prediction, y_train))
+    #         testing_scores.append(score(testing_prediction, y_test))
+    #         regularizations.append(regularization)
 
-    # # ===== Exporting prediction result =====
-    # ids = testing_data[testing_data[1] == 'PM10'].iloc[:, 0]
-    # result = pd.concat(
-    #     [
-    #         ids.to_frame('id').reset_index(drop=True),
-    #         pd.DataFrame.from_items([('value', prediction.flatten())]).reset_index(drop=True)
-    #     ],
-    #     axis=1,
-    #     ignore_index=True
-    # )
-    # result.columns = ['id', 'value']
+    # task_io.export_validation(pd.DataFrame({
+    #     'window size': window_sizes,
+    #     'regularization': regularizations,
+    #     'training score': training_scores,
+    #     'testing score': testing_scores
+    # }))
 
-    # task_io.export_prediction(result)
+    # ===== Fitting linear model =====
+    from linear_model import LinearRegression
+    model = LinearRegression()
+    regularization = 100
+    model.fit(x, y, regularization)
+
+    # ===== Prediction =====
+    testing_x = get_processed_testing(testing_data, selection, window_width)
+    prediction = np.apply_along_axis(model.predict, 1, testing_x)
+
+    # ===== Exporting prediction result =====
+    ids = testing_data[testing_data[1] == 'PM10'].iloc[:, 0]
+    result = pd.concat(
+        [
+            ids.to_frame('id').reset_index(drop=True),
+            pd.DataFrame.from_items([('value', prediction.flatten())]).reset_index(drop=True)
+        ],
+        axis=1,
+        ignore_index=True
+    )
+    result.columns = ['id', 'value']
+
+    task_io.export_prediction(result)
 
 
 if __name__ == "__main__":
