@@ -83,10 +83,11 @@ def main():
     regularizations = list()
 
     from linear_model import LinearRegression
-    for i in range(1, 10):
+    for i in range(9, 10):
         window_width = i
         x, y = get_processed_training(training_data, selection, window_width=window_width)
-        for split in range(10):
+        for split in range(2):
+            print("Window width {0} at split {1}".format(window_width, split))
             X_train, X_test, y_train, y_test = train_test_split(x, y, test_split=split)
             regularization = 1000
             model = LinearRegression()

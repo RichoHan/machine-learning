@@ -28,10 +28,12 @@ class LinearRegression():
         """
         # Initialization
         size, width = x.shape
-        print(size, width)
         converged = False
         iteration = 1
         b, w = 1, np.random.rand(1, width)
+        epsilon = 1e-8
+        gti_b = epsilon
+        gti_w = np.zeros(width) + epsilon
 
         # Goodness of function
         def diff(x, y):
@@ -41,9 +43,6 @@ class LinearRegression():
             return sum([diff(x[i], y[i])**2 for i in range(size)])
 
         loss = loss_f(x, y, size) + regularization * np.sum(np.apply_along_axis(lambda x: x**2, 0, w))
-        # loss = diff(x[0], y[0])**2
-        gti_b = 0
-        gti_w = np.zeros(width)
 
         # Converge iteration
         while not converged and iteration < max_iter:
@@ -54,6 +53,7 @@ class LinearRegression():
             # Update bias and weight with eta
             gti_b += grad_0 ** 2
             gti_w += grad_1 ** 2
+
             temp_b = b - eta * (grad_0 / math.sqrt(gti_b))
             temp_w = w - eta * (grad_1 / np.sqrt(gti_w))
             b = temp_b
@@ -62,9 +62,10 @@ class LinearRegression():
             # Compute the error again
             error = loss_f(x, y, size) + regularization * np.sum(np.apply_along_axis(lambda x: x**2, 0, w))
 
-            if error > loss:
-                print("Diverging at iteration {0}".format(iteration))
-                return None, None, False
+            # if error > loss:
+            if abs(error - loss) > 1e+7:
+                print("Diverged at iteration {0}".format(iteration))
+                # return b, w, converged
 
             if abs(error - loss) <= end_point:
                 print("Converged at iteration {0}".format(iteration))
@@ -94,8 +95,8 @@ class LinearRegression():
         # Call gredient decent, and get intercept(=bias) and slope(=weight)
         while not converged:
             print("Setting eta to {0}".format(eta))
-            self.bias, self.weight, converged = self._gradient_descent(eta, X, y, end_point, max_iter=10000, regularization=regularization)
-            eta = eta / 2
+            self.bias, self.weight, converged = self._gradient_descent(eta, X, y, end_point, max_iter=100, regularization=regularization)
+            eta = eta / 10
         print('bias = {0}, weight = {1}'.format(self.bias, self.weight))
 
         return self
