@@ -1,5 +1,4 @@
 "Linear model for assignment 1."
-import math
 import numpy as np
 
 
@@ -31,9 +30,6 @@ class LinearRegression():
         converged = False
         iteration = 1
         b, w = 1, np.random.rand(1, width)
-        epsilon = 1e-8
-        gti_b = epsilon
-        gti_w = np.zeros(width) + epsilon
 
         # Goodness of function
         def diff(x, y):
@@ -48,25 +44,12 @@ class LinearRegression():
         while not converged and iteration < max_iter:
             # Stochastic gradient descent
             for i in range(size):
-                grad_0 = 2 * diff(x[i], y[i])
+                grad_0 = 2 * diff(x[i], y[i]) * (-1)
                 grad_1 = 2 * diff(x[i], y[i]) * (-x[i])
                 temp_b = b - eta * grad_0
                 temp_w = w - eta * grad_1
                 b = temp_b
                 w = temp_w
-
-            # # For each training sample, compute the gradient (d/d_theta j(theta))
-            # grad_0 = sum(2 * [diff(x[i], y[i]) for i in range(size)])
-            # grad_1 = sum(2 * [diff(x[i], y[i]) * (-x[i]) for i in range(size)])
-
-            # # Update bias and weight with eta
-            # gti_b += grad_0 ** 2
-            # gti_w += grad_1 ** 2
-
-            # temp_b = b - eta * (grad_0 / math.sqrt(gti_b))
-            # temp_w = w - eta * (grad_1 / np.sqrt(gti_w))
-            # b = temp_b
-            # w = temp_w
 
             # Compute the error again
             error = loss_f(x, y, size) + regularization * np.sum(np.apply_along_axis(lambda x: x**2, 0, w))
@@ -97,7 +80,7 @@ class LinearRegression():
         -------
         self : returns an instance of self.
         """
-        eta = 0.0000001  # learning rate
+        eta = 0.000001  # learning rate
         end_point = 0.01  # convergence criteria
         converged = False
 

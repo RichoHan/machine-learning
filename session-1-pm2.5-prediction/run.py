@@ -11,20 +11,23 @@ def score(predictions, targets):
     return np.sqrt(((predictions - targets) ** 2).mean())
 
 
-def get_processed_training(training_data, selection, window_width=5):
+def get_processed_training(training_data, selection, window_width=4):
+    # features = training_data.loc[training_data['代兜'].isin(selection + ['PM2.5'])].reset_index(drop=True)
     features = training_data.loc[training_data['代兜'].isin(selection)].reset_index(drop=True)
+    pm_25 = training_data.loc[training_data['代兜'] == 'PM2.5'].reset_index(drop=True)
     max_width = 24 - window_width
-    size = int(features.shape[0] / len(selection))
+    size = int((features.shape[0]) / len(selection))
     x = np.zeros(shape=(size * max_width, window_width * len(selection)))
     y = np.zeros(shape=(size * max_width, 1))
     for index, row in features.iterrows():
-        for i in range(0, max_width):
+        for i in range(max_width):
             samples = row.loc[str(i):str(i + window_width - 1)].apply(pd.to_numeric).values
             for pivot, sample in np.ndenumerate(samples):
                 x[int(index / len(selection)) * max_width + i][(index % len(selection)) * window_width + pivot] = sample
-            if row['代兜'] == 'PM2.5':
-                answer = row.loc[str(i + window_width):str(i + window_width)].apply(pd.to_numeric).values
-                y[int(index / len(selection)) * max_width + i] = answer
+    for index, row in pm_25.iterrows():
+        for i in range(max_width):
+            answer = row.loc[str(i + window_width):str(i + window_width)].apply(pd.to_numeric).values
+            y[int(index / len(selection)) * max_width + i] = answer
     return x, y
 
 
@@ -68,45 +71,53 @@ def main():
         validation_path='./data/validation.csv'
     )
     training_data = task_io.import_training_data()
-    # testing_data = task_io.import_testing_data()
-
-    # ===== Data Processing =====
-    # selection = ['PM2.5', 'PM10', 'O3', 'NO2']
-    selection = ['PM2.5']
-    # window_width = 4
-    # x, y = get_processed_training(training_data, selection, window_width=window_width)
+    testing_data = task_io.import_testing_data()
 
     # ===== Cross Validation =====
+    # selections = training_data['代兜'].unique()
+    # selections = np.delete(selections, np.argwhere(selections == 'RAINFALL'))
+    selections = ['PM2.5']
     window_sizes = list()
     training_scores = list()
     testing_scores = list()
     regularizations = list()
+    features = list()
 
     from linear_model import LinearRegression
     for i in range(1, 10):
-        for j in range(5):
-            window_width = i
-            regularization = 10 ** j
-            x, y = get_processed_training(training_data, selection, window_width=window_width)
-            for split in range(10):
-                print("Window width {0} at split {1}".format(window_width, split))
-                X_train, X_test, y_train, y_test = train_test_split(x, y, test_split=split)
-                model = LinearRegression()
-                model.fit(X_train, y_train, regularization)
-                training_prediction = np.apply_along_axis(model.predict, 1, X_train)
-                testing_prediction = np.apply_along_axis(model.predict, 1, X_test)
+        for j in range(7):
+            for feature in selections:
+                selection = [feature]
+                window_width = i
+                regularization = 10 ** j
+                x, y = get_processed_training(training_data, selection, window_width=window_width)
+                for split in range(10):
+                    print("Window width {0} and regularization {1} at split {2} with feature {3}".format(window_width, regularization, split, feature))
+                    X_train, X_test, y_train, y_test = train_test_split(x, y, test_split=split)
+                    model = LinearRegression()
+                    model.fit(X_train, y_train, regularization)
+                    training_prediction = np.apply_along_axis(model.predict, 1, X_train)
+                    testing_prediction = np.apply_along_axis(model.predict, 1, X_test)
 
-                window_sizes.append(i)
-                training_scores.append(score(training_prediction, y_train))
-                testing_scores.append(score(testing_prediction, y_test))
-                regularizations.append(regularization)
+                    window_sizes.append(i)
+                    training_scores.append(score(training_prediction, y_train))
+                    testing_scores.append(score(testing_prediction, y_test))
+                    regularizations.append(regularization)
+                    features.append(feature)
 
     task_io.export_validation(pd.DataFrame({
         'window size': window_sizes,
         'regularization': regularizations,
         'training score': training_scores,
-        'testing score': testing_scores
+        'testing score': testing_scores,
+        'feature': features
     }))
+
+    # # ===== Data Processing =====
+    # # selection = ['PM2.5', 'PM10', 'O3', 'NO2']
+    # selection = ['CH4']
+    # window_width = 4
+    # x, y = get_processed_training(training_data, selection, window_width=window_width)
 
     # # ===== Fitting linear model =====
     # from linear_model import LinearRegression
