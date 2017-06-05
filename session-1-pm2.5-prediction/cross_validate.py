@@ -71,7 +71,7 @@ def main():
                 window_width = i
                 regularization = 10 ** j
                 x, y = task_io.get_processed_training(training_data, selection, window_width=window_width)
-                for split in range(1):
+                for split in range(10):
                     print("Window width {0} and regularization {1} at split {2} with feature {3}".format(window_width, regularization, split, feature))
                     X_train, X_test, y_train, y_test = task_io.train_test_split(x, y, test_split=split)
                     model = LinearRegression()

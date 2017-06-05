@@ -5,57 +5,41 @@ import numpy as np
 import pandas as pd
 
 from task_io import TaskIO
+from linear_model import LinearRegression
+
+
+class Session1TaskIO(TaskIO):
+    def get_processed_training(self, training_data, selection, window_width=4):
+        features = training_data.loc[training_data['代兜'].isin(selection)].reset_index(drop=True)
+        pm_25 = training_data.loc[training_data['代兜'] == 'PM2.5'].reset_index(drop=True)
+        max_width = 24 - window_width
+        size = int((features.shape[0]) / len(selection))
+        x = np.zeros(shape=(size * max_width, window_width * len(selection)))
+        y = np.zeros(shape=(size * max_width, 1))
+        for index, row in features.iterrows():
+            for i in range(max_width):
+                samples = row.loc[str(i):str(i + window_width - 1)].apply(pd.to_numeric).values
+                for pivot, sample in np.ndenumerate(samples):
+                    x[int(index / len(selection)) * max_width + i][(index % len(selection)) * window_width + pivot] = sample
+        for index, row in pm_25.iterrows():
+            for i in range(max_width):
+                answer = row.loc[str(i + window_width):str(i + window_width)].apply(pd.to_numeric).values
+                y[int(index / len(selection)) * max_width + i] = answer
+        return x, y
+
+    def get_processed_testing(self, testing_data, selection, window_width=5):
+        testing_features = testing_data.loc[testing_data[1].isin(selection)].reset_index(drop=True)
+        size = int(testing_features.shape[0] / len(selection))
+        x = np.zeros(shape=(size, window_width * len(selection)))
+        for index, row in testing_features.iterrows():
+            samples = row.iloc[(11 - window_width):11].apply(pd.to_numeric)
+            for pivot, sample in np.ndenumerate(samples):
+                x[int(index / len(selection))][(index % len(selection)) * window_width + pivot] = sample
+        return x
 
 
 def score(predictions, targets):
     return np.sqrt(((predictions - targets) ** 2).mean())
-
-
-def get_processed_training(training_data, selection, window_width=4):
-    # features = training_data.loc[training_data['代兜'].isin(selection + ['PM2.5'])].reset_index(drop=True)
-    features = training_data.loc[training_data['代兜'].isin(selection)].reset_index(drop=True)
-    pm_25 = training_data.loc[training_data['代兜'] == 'PM2.5'].reset_index(drop=True)
-    max_width = 24 - window_width
-    size = int((features.shape[0]) / len(selection))
-    x = np.zeros(shape=(size * max_width, window_width * len(selection)))
-    y = np.zeros(shape=(size * max_width, 1))
-    for index, row in features.iterrows():
-        for i in range(max_width):
-            samples = row.loc[str(i):str(i + window_width - 1)].apply(pd.to_numeric).values
-            for pivot, sample in np.ndenumerate(samples):
-                x[int(index / len(selection)) * max_width + i][(index % len(selection)) * window_width + pivot] = sample
-    for index, row in pm_25.iterrows():
-        for i in range(max_width):
-            answer = row.loc[str(i + window_width):str(i + window_width)].apply(pd.to_numeric).values
-            y[int(index / len(selection)) * max_width + i] = answer
-    return x, y
-
-
-def get_processed_testing(testing_data, selection, window_width=5):
-    testing_features = testing_data.loc[testing_data[1].isin(selection)].reset_index(drop=True)
-    size = int(testing_features.shape[0] / len(selection))
-    x = np.zeros(shape=(size, window_width * len(selection)))
-    for index, row in testing_features.iterrows():
-        samples = row.iloc[(11 - window_width):11].apply(pd.to_numeric)
-        for pivot, sample in np.ndenumerate(samples):
-            x[int(index / len(selection))][(index % len(selection)) * window_width + pivot] = sample
-    return x
-
-
-def train_test_split(x, y, test_split=0, k=10):
-    X_splits = np.split(x, k)
-    X_train = None
-    y_splits = np.split(y, k)
-    y_train = None
-
-    for i in range(0, k):
-        if i != test_split:
-            X_train = X_splits[i] if X_train is None else np.concatenate((X_train, X_splits[i]), axis=0)
-            y_train = y_splits[i] if y_train is None else np.concatenate((y_train, y_splits[i]), axis=0)
-
-    X_test = X_splits[test_split]
-    y_test = y_splits[test_split]
-    return X_train, X_test, y_train, y_test
 
 
 def main():
@@ -64,7 +48,7 @@ def main():
     warnings.filterwarnings(action="ignore", module="scipy", message="^internal gelsd")
 
     # ===== Importing training and testing data =====
-    task_io = TaskIO(
+    task_io = Session1TaskIO(
         train='./data/train.csv',
         test='./data/test_X.csv',
         result='./data/result.csv',
@@ -73,75 +57,34 @@ def main():
     training_data = task_io.import_training_data()
     testing_data = task_io.import_testing_data()
 
-    # ===== Cross Validation =====
-    # selections = training_data['代兜'].unique()
-    # selections = np.delete(selections, np.argwhere(selections == 'RAINFALL'))
-    selections = ['PM2.5']
-    window_sizes = list()
-    training_scores = list()
-    testing_scores = list()
-    regularizations = list()
-    features = list()
+    # ===== Data Processing =====
+    # selection = ['PM2.5', 'PM10', 'O3', 'NO2']
+    selection = ['CH4']
+    window_width = 4
+    x, y = task_io.get_processed_training(training_data, selection, window_width=window_width)
 
-    from linear_model import LinearRegression
-    for i in range(1, 10):
-        for j in range(7):
-            for feature in selections:
-                selection = [feature]
-                window_width = i
-                regularization = 10 ** j
-                x, y = get_processed_training(training_data, selection, window_width=window_width)
-                for split in range(10):
-                    print("Window width {0} and regularization {1} at split {2} with feature {3}".format(window_width, regularization, split, feature))
-                    X_train, X_test, y_train, y_test = train_test_split(x, y, test_split=split)
-                    model = LinearRegression()
-                    model.fit(X_train, y_train, regularization)
-                    training_prediction = np.apply_along_axis(model.predict, 1, X_train)
-                    testing_prediction = np.apply_along_axis(model.predict, 1, X_test)
+    # ===== Fitting linear model =====
+    model = LinearRegression()
+    regularization = 10000
+    model.fit(x, y, regularization)
 
-                    window_sizes.append(i)
-                    training_scores.append(score(training_prediction, y_train))
-                    testing_scores.append(score(testing_prediction, y_test))
-                    regularizations.append(regularization)
-                    features.append(feature)
+    # ===== Prediction =====
+    testing_x = task_io.get_processed_testing(testing_data, selection, window_width)
+    prediction = np.apply_along_axis(model.predict, 1, testing_x)
 
-    task_io.export_validation(pd.DataFrame({
-        'window size': window_sizes,
-        'regularization': regularizations,
-        'training score': training_scores,
-        'testing score': testing_scores,
-        'feature': features
-    }))
+    # ===== Exporting prediction result =====
+    ids = testing_data[testing_data[1] == 'PM10'].iloc[:, 0]
+    result = pd.concat(
+        [
+            ids.to_frame('id').reset_index(drop=True),
+            pd.DataFrame.from_items([('value', prediction.flatten())]).reset_index(drop=True)
+        ],
+        axis=1,
+        ignore_index=True
+    )
+    result.columns = ['id', 'value']
 
-    # # ===== Data Processing =====
-    # # selection = ['PM2.5', 'PM10', 'O3', 'NO2']
-    # selection = ['CH4']
-    # window_width = 4
-    # x, y = get_processed_training(training_data, selection, window_width=window_width)
-
-    # # ===== Fitting linear model =====
-    # from linear_model import LinearRegression
-    # model = LinearRegression()
-    # regularization = 100
-    # model.fit(x, y, regularization)
-
-    # # ===== Prediction =====
-    # testing_x = get_processed_testing(testing_data, selection, window_width)
-    # prediction = np.apply_along_axis(model.predict, 1, testing_x)
-
-    # # ===== Exporting prediction result =====
-    # ids = testing_data[testing_data[1] == 'PM10'].iloc[:, 0]
-    # result = pd.concat(
-    #     [
-    #         ids.to_frame('id').reset_index(drop=True),
-    #         pd.DataFrame.from_items([('value', prediction.flatten())]).reset_index(drop=True)
-    #     ],
-    #     axis=1,
-    #     ignore_index=True
-    # )
-    # result.columns = ['id', 'value']
-
-    # task_io.export_prediction(result)
+    task_io.export_prediction(result)
 
 
 if __name__ == "__main__":

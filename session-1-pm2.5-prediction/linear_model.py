@@ -79,12 +79,12 @@ class LinearRegression():
         -------
         self : returns an instance of self.
         """
-        eta = 0.00001  # learning rate
-        end_point = 0.01  # convergence criteria
+        eta = 0.000001  # learning rate
+        end_point = 0.001  # convergence criteria
         converged = False
 
         # Call gredient decent, and get intercept(=bias) and slope(=weight)
-        self.bias, self.weight, converged = self._gradient_descent(eta, X, y, end_point, max_iter=1000, regularization=regularization)
+        self.bias, self.weight, converged = self._gradient_descent(eta, X, y, end_point, max_iter=10000, regularization=regularization)
         print('bias = {0}, weight = {1}'.format(self.bias, self.weight))
 
         return self
