@@ -57,7 +57,6 @@ class LinearRegression():
             # if error > loss:
             if abs(error - loss) > 1e+8:
                 print("Diverged at iteration {0}".format(iteration))
-                # return b, w, converged
 
             if abs(error - loss) <= end_point:
                 print("Converged at iteration {0}".format(iteration))
@@ -80,16 +79,12 @@ class LinearRegression():
         -------
         self : returns an instance of self.
         """
-        eta = 0.000001  # learning rate
+        eta = 0.00001  # learning rate
         end_point = 0.01  # convergence criteria
         converged = False
 
         # Call gredient decent, and get intercept(=bias) and slope(=weight)
-        while not converged:
-            print("Setting eta to {0}".format(eta))
-            self.bias, self.weight, converged = self._gradient_descent(eta, X, y, end_point, max_iter=100, regularization=regularization)
-            eta = eta / 2
-        # self.bias, self.weight, converged = self._gradient_descent(eta, X, y, end_point, max_iter=100, regularization=regularization)
+        self.bias, self.weight, converged = self._gradient_descent(eta, X, y, end_point, max_iter=1000, regularization=regularization)
         print('bias = {0}, weight = {1}'.format(self.bias, self.weight))
 
         return self
