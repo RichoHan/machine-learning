@@ -57,7 +57,12 @@ def main():
     training_data = task_io.import_training_data()
 
     # ===== Cross Validation =====
-    selections = ['PM2.5']
+    selected_features = [
+        ['PM2.5'],
+        ['PM2.5', 'PM10'],
+        ['PM2.5', 'O3'],
+        ['PM2.5', 'SO2']
+    ]
     window_sizes = list()
     training_scores = list()
     testing_scores = list()
@@ -66,12 +71,12 @@ def main():
 
     for i in range(4, 5):
         for j in range(4, 5):
-            for feature in selections:
-                selection = [feature]
+            for feature in selected_features:
+                selection = feature
                 window_width = i
                 regularization = 10 ** j
                 x, y = task_io.get_processed_training(training_data, selection, window_width=window_width)
-                for split in range(10):
+                for split in range(1):
                     print("Window width {0} and regularization {1} at split {2} with feature {3}".format(window_width, regularization, split, feature))
                     X_train, X_test, y_train, y_test = task_io.train_test_split(x, y, test_split=split)
                     model = LinearRegression()

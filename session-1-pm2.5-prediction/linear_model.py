@@ -62,6 +62,7 @@ class LinearRegression():
                 print("Converged at iteration {0}".format(iteration))
                 converged = True
 
+            print(abs(error - loss))
             loss = error
             iteration = iteration + 1
         return b, w, True
@@ -79,8 +80,8 @@ class LinearRegression():
         -------
         self : returns an instance of self.
         """
-        eta = 0.000001  # learning rate
-        end_point = 0.001  # convergence criteria
+        eta = 1e-8  # learning rate
+        end_point = 0.01  # convergence criteria
         converged = False
 
         # Call gredient decent, and get intercept(=bias) and slope(=weight)

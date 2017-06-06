@@ -59,7 +59,7 @@ def main():
 
     # ===== Data Processing =====
     # selection = ['PM2.5', 'PM10', 'O3', 'NO2']
-    selection = ['CH4']
+    selection = ['PM2.5', 'PM10']
     window_width = 4
     x, y = task_io.get_processed_training(training_data, selection, window_width=window_width)
 
