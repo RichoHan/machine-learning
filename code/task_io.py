@@ -11,8 +11,8 @@ class TaskIO(metaclass=ABCMeta):
         self.result = result
         self.validation_path = validation_path
 
-    def import_training_data(self):
-        return pd.read_csv(self.train, header=None, encoding="big5")
+    def import_training_data(self, header=None, names=None):
+        return pd.read_csv(self.train, header=header, names=names, encoding="big5")
 
     def import_testing_data(self):
         return pd.read_csv(self.test, encoding="big5", header=None)
