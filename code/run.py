@@ -1,7 +1,5 @@
 #!/usr/bin/python
-import numpy as np
 import pandas as pd
-
 from task_io import TaskIO
 
 
@@ -12,16 +10,19 @@ class Session2TaskIO(TaskIO):
     def get_processed_testing(self):
         pass
 
+    def score(self, y_test, y_predicted):
+        return (y_test == y_predicted).value_counts(True)[1]
+
 
 def main():
-
     # ===== Importing training and testing data =====
     task_io = Session2TaskIO(
         train='./data/spam_train.csv',
         test='./data/spam_test.csv',
         result='./data/submission.csv',
-        validation_path='./data/validation.csv'
+        validation='./data/validation.csv'
     )
+
     training_data = task_io.import_training_data(names=[
         'id',
 
@@ -48,7 +49,17 @@ def main():
         # spam (1) or not (0)
         'spam'
     ])
-    print(training_data.describe())
+    X = training_data.loc[:, 'id':'capital_run_length_total']
+    y = training_data.loc[:, 'spam']
+
+    # Cross validation
+    from sklearn.model_selection import train_test_split
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+
+    from linear_model import LogisticRegression
+    model = LogisticRegression()
+    model.fit(X_train, y_train)
+    print(task_io.score(y_test, model.predict(X_test)))
 
 
 if __name__ == "__main__":
