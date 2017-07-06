@@ -13,8 +13,8 @@ class TaskIO(metaclass=ABCMeta):
     def import_training_data(self, header=None, names=None):
         return pd.read_csv(self.train, header=header, names=names, encoding="big5")
 
-    def import_testing_data(self):
-        return pd.read_csv(self.test, encoding="big5", header=None)
+    def import_testing_data(self, header=None, names=None):
+        return pd.read_csv(self.test, header=header, names=names, encoding="big5")
 
     def export_prediction(self, data):
         data.to_csv(self.result, index=False)
