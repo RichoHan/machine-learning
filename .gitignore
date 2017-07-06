@@ -3,7 +3,7 @@
 
 *.pdf
 .vscode/*
-result.csv
+submission.csv
 
 ### Python ###
 # Byte-compiled / optimized / DLL files

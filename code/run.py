@@ -49,14 +49,15 @@ def main():
     X = training_data.loc[:, 'id':'capital_run_length_total']
     y = training_data.loc[:, 'spam']
 
-    # Cross validation
+    # ===== Cross validation =====
     from sklearn.model_selection import train_test_split
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
 
+    # from sklearn.linear_model import LogisticRegression
     from linear_model import LogisticRegression
     model = LogisticRegression()
     model.fit(X_train, y_train)
-    print(task_io.score(y_test, model.predict(X_test)))
+    print('Score: {0}'.format(task_io.score(y_test, model.predict(X_test))))
 
     # # ===== Predict testing data =====
     # testing_data = task_io.import_testing_data(names=['id'] + FEATURES)
