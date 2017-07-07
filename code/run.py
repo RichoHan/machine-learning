@@ -83,8 +83,18 @@ def main():
     y = training_data.loc[:, 'spam']
 
     # ===== Cross validation =====
-    validation = pd.DataFrame(columns=range(1, 11))
-    scores = cross_validation(X, y, task_io.score)
+    from sklearn.model_selection import train_test_split
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+
+    from linear_model import LogisticRegression
+    model = LogisticRegression()
+    model.fit(X_train, y_train)
+    print('Score: {0}'.format(task_io.score(y_test, model.predict(X_test))))
+
+    # ===== K-fold cross validation =====
+    n_splits = 10
+    validation = pd.DataFrame(columns=range(1, n_splits + 1))
+    scores = cross_validation(X, y, task_io.score, n_splits)
     validation = validation.append([scores], ignore_index=True)
     task_io.export_validation(validation)
 
