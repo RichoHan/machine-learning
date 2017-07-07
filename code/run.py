@@ -36,6 +36,24 @@ class Session2TaskIO(TaskIO):
         return (y_test == y_predicted).value_counts(True)[1]
 
 
+def cross_validation(X, y, score_func, splits=10):
+    from sklearn.model_selection import KFold
+    from linear_model import LogisticRegression
+    scores = list()
+
+    kf = KFold(n_splits=splits, shuffle=True)
+    kf.get_n_splits(X)
+    for train_index, test_index in kf.split(X):
+        X_train, X_test = X.iloc[train_index, :], X.iloc[test_index, :]
+        y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+
+        model = LogisticRegression()
+        model.fit(X_train, y_train)
+        scores.append(score_func(y_test, model.predict(X_test)))
+
+    return pd.Series(scores, index=range(1, splits + 1))
+
+
 def main():
     # ===== Import training and testing data =====
     task_io = Session2TaskIO(
@@ -50,16 +68,12 @@ def main():
     y = training_data.loc[:, 'spam']
 
     # ===== Cross validation =====
-    from sklearn.model_selection import train_test_split
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+    validation = pd.DataFrame(columns=range(1, 11))
+    scores = cross_validation(X, y, task_io.score)
+    validation = validation.append([scores], ignore_index=True)
+    task_io.export_validation(validation)
 
-    # from sklearn.linear_model import LogisticRegression
-    from linear_model import LogisticRegression
-    model = LogisticRegression()
-    model.fit(X_train, y_train)
-    print('Score: {0}'.format(task_io.score(y_test, model.predict(X_test))))
-
-    # # ===== Predict testing data =====
+    # ===== Predict testing data =====
     # testing_data = task_io.import_testing_data(names=['id'] + FEATURES)
 
     # from linear_model import LogisticRegression
@@ -71,8 +85,7 @@ def main():
     #         testing_data.loc[:, 'id'].reset_index(drop=True).map(lambda x: x + 1),
     #         pd.Series(prediction).astype(float)
     #     ],
-    #     axis=1,
-    #     ignore_index=True
+    #     axis=1
     # )
     # submission.columns = ['id', 'value']
     # task_io.export_prediction(submission)
