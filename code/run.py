@@ -2,7 +2,7 @@
 import pandas as pd
 from task_io import TaskIO
 
-FEATURES = [
+SPAM_FEATURES = [
     # Word frequency.
     'word_freq_make', 'word_freq_address', 'word_freq_all', 'word_freq_3d',
     'word_freq_our', 'word_freq_over', 'word_freq_remove', 'word_freq_internet',
@@ -37,6 +37,19 @@ class Session2TaskIO(TaskIO):
 
 
 def cross_validation(X, y, score_func, splits=10):
+    """ Run K-fold validation and return prediction scores.
+
+    Parameters
+    ----------
+    X (ndarray): Training vector.
+
+    y (ndarray): Target vector.
+
+    Returns
+    -------
+    scores : Series, shape = (n_samples,)
+        score of from each validation round.
+    """
     from sklearn.model_selection import KFold
     from linear_model import LogisticRegression
     scores = list()
@@ -56,6 +69,7 @@ def cross_validation(X, y, score_func, splits=10):
 
 def main():
     # ===== Import training and testing data =====
+    # Read training and testing data, and then separate features from answers for cross-validation.
     task_io = Session2TaskIO(
         train='./data/spam_train.csv',
         test='./data/spam_test.csv',
@@ -63,7 +77,7 @@ def main():
         validation='./data/validation.csv'
     )
 
-    column_names = ['id'] + FEATURES + ['spam']
+    column_names = ['id'] + SPAM_FEATURES + ['spam']
     training_data = task_io.import_training_data(names=column_names)
     X = training_data.loc[:, 'id':'capital_run_length_total']
     y = training_data.loc[:, 'spam']
@@ -75,7 +89,7 @@ def main():
     task_io.export_validation(validation)
 
     # ===== Predict testing data =====
-    column_names = ['id'] + FEATURES
+    column_names = ['id'] + SPAM_FEATURES
     testing_data = task_io.import_testing_data(names=column_names)
 
     from linear_model import LogisticRegression
