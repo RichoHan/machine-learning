@@ -63,7 +63,8 @@ def main():
         validation='./data/validation.csv'
     )
 
-    training_data = task_io.import_training_data(names=['id'] + FEATURES + ['spam'])
+    column_names = ['id'] + FEATURES + ['spam']
+    training_data = task_io.import_training_data(names=column_names)
     X = training_data.loc[:, 'id':'capital_run_length_total']
     y = training_data.loc[:, 'spam']
 
@@ -74,21 +75,22 @@ def main():
     task_io.export_validation(validation)
 
     # ===== Predict testing data =====
-    # testing_data = task_io.import_testing_data(names=['id'] + FEATURES)
+    column_names = ['id'] + FEATURES
+    testing_data = task_io.import_testing_data(names=column_names)
 
-    # from linear_model import LogisticRegression
-    # model = LogisticRegression()
-    # model.fit(X, y)
-    # prediction = model.predict(testing_data)
-    # submission = pd.concat(
-    #     [
-    #         testing_data.loc[:, 'id'].reset_index(drop=True).map(lambda x: x + 1),
-    #         pd.Series(prediction).astype(float)
-    #     ],
-    #     axis=1
-    # )
-    # submission.columns = ['id', 'value']
-    # task_io.export_prediction(submission)
+    from linear_model import LogisticRegression
+    model = LogisticRegression()
+    model.fit(X, y)
+    prediction = model.predict(testing_data)
+    submission = pd.concat(
+        [
+            testing_data.loc[:, 'id'].reset_index(drop=True).map(lambda x: x + 1),
+            pd.Series(prediction).astype(float)
+        ],
+        axis=1
+    )
+    submission.columns = ['id', 'value']
+    task_io.export_prediction(submission)
 
 
 if __name__ == "__main__":
