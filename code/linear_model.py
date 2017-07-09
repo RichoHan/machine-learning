@@ -9,13 +9,12 @@ class LogisticRegression(linear_model.LogisticRegression):
         super().__init__()
 
     def _sigmoid(self, z):
-        return 1.0 / (1.0 + np.exp(-z))
+        return 1 / (1 + np.exp(-z))
 
-    def _cost(self, theta, X, y):
+    def _cost(self, theta, X, y, epsilon=1e-10):
+        # Calculate -lnL(w, b), add epsilon(1e-10) to avoid zero denominator.
         p1 = self._sigmoid(np.dot(X, theta))
-
-        # Calculate -lnL(w, b), add 1e-10 to make sure denominator is no zero.
-        log_l = (-y) * np.log(p1) - (1 - y) * np.log(1 - p1 + 1e-10)
+        log_l = (-y) * np.log(p1) - (1 - y) * np.log(1 - p1 + epsilon)
 
         return log_l.mean()
 
@@ -35,6 +34,15 @@ class LogisticRegression(linear_model.LogisticRegression):
             jac=self._gradient
         )
         return result['x']
+
+        # last_cost = 0
+        # cost = self._cost(theta, X, y)
+        # while np.abs(cost - last_cost) > 1e-2 or cost > 1e-1:
+        #     theta -= 1e-6 * self._gradient(theta, X, y)
+        #     last_cost = cost
+        #     cost = self._cost(theta, X, y)
+
+        # return theta
 
     def fit(self, X, y):
         """Compute the fit function for the model.
