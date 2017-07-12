@@ -1,12 +1,11 @@
 "Linear model for assignment 2."
 import numpy as np
 
-from sklearn import linear_model
 
-
-class LogisticRegression(linear_model.LogisticRegression):
+class LogisticRegression():
     def __init__(self):
-        super().__init__()
+        self.costs = list()
+        self.thetas = list()
 
     def _sigmoid(self, z):
         return 1 / (1 + np.exp(-z))
@@ -21,28 +20,48 @@ class LogisticRegression(linear_model.LogisticRegression):
     def _gradient(self, theta, X, y):
         error = self._sigmoid(np.dot(X, theta)) - y
         grad = np.dot(error, X) / y.size
+        # grad = np.squeeze(np.asarray(grad))
 
         return grad
 
-    def _gradient_descent(self, theta, X, y):
-        import scipy.optimize as opt
-        result = opt.minimize(
-            fun=self._cost,
-            x0=theta,
-            args=(X, y),
-            method='BFGS',
-            jac=self._gradient
-        )
-        return result['x']
+    def _gradient_descent(self, theta, X, y, eta=1e-4, upper=10000, gamma=0.95, epsilon=1e-10):
+        # import scipy.optimize as opt
+        # result = opt.minimize(
+        #     fun=self._cost,
+        #     x0=theta,
+        #     args=(X, y),
+        #     method='BFGS',
+        #     jac=self._gradient
+        # )
+        # return result['x']
 
-        # last_cost = 0
-        # cost = self._cost(theta, X, y)
-        # while np.abs(cost - last_cost) > 1e-2 or cost > 1e-1:
-        #     theta -= 1e-6 * self._gradient(theta, X, y)
-        #     last_cost = cost
-        #     cost = self._cost(theta, X, y)
+        # AdaDelta
+        accu_grad = 0
+        delta = 0
+        accu_delta = 0
+        t = 0
 
-        # return theta
+        last_cost = 0
+        cost = self._cost(theta, X, y)
+        while np.abs(cost - last_cost) > 1e-7 and t < upper:
+            t += 1
+            # Update gradient and accumulated gradient
+            grad = self._gradient(theta, X, y)
+            accu_grad = gamma * accu_grad + (1 - gamma) * grad * grad
+
+            # Update delta and accumulated delta
+            delta = -(np.sqrt((accu_delta + epsilon) / t) / np.sqrt((accu_grad + epsilon) / (t + 1))) * grad
+            accu_delta = gamma * accu_delta + (1 - gamma) * delta * delta
+
+            # Update theta
+            theta += delta
+
+            last_cost = cost
+            cost = self._cost(theta, X, y)
+            self.costs.append(cost)
+            self.thetas.append(theta.copy())
+
+        return theta
 
     def fit(self, X, y):
         """Compute the fit function for the model.
@@ -76,3 +95,11 @@ class LogisticRegression(linear_model.LogisticRegression):
         """
         p = self._sigmoid(np.dot(X, self.theta))
         return [1 if x >= 0.5 else 0 for x in p]
+
+    def get_statistics(self, X, y, score):
+        scores = list()
+        for theta in self.thetas:
+            p = self._sigmoid(np.dot(X, theta))
+            scores.append(score(y, [1 if x >= 0.5 else 0 for x in p]))
+
+        return self.costs, scores

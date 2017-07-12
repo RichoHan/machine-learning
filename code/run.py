@@ -35,6 +35,9 @@ class Session2TaskIO(TaskIO):
     def score(self, y_test, y_predicted):
         return (y_test == y_predicted).value_counts(True)[1]
 
+    def export_data(self, data, path):
+        data.to_csv(path, index=False)
+
 
 def cross_validation(X, y, score_func, splits=10):
     """ Run K-fold validation and return prediction scores.
@@ -82,22 +85,6 @@ def main():
     X = training_data.loc[:, 'id':'capital_run_length_total']
     y = training_data.loc[:, 'spam']
 
-    # ===== Cross validation =====
-    from sklearn.model_selection import train_test_split
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
-
-    from linear_model import LogisticRegression
-    model = LogisticRegression()
-    model.fit(X_train, y_train)
-    print('Score: {0}'.format(task_io.score(y_test, model.predict(X_test))))
-
-    # ===== K-fold cross validation =====
-    n_splits = 10
-    validation = pd.DataFrame(columns=range(1, n_splits + 1))
-    scores = cross_validation(X, y, task_io.score, n_splits)
-    validation = validation.append([scores], ignore_index=True)
-    task_io.export_validation(validation)
-
     # ===== Predict testing data =====
     column_names = ['id'] + SPAM_FEATURES
     testing_data = task_io.import_testing_data(names=column_names)
@@ -115,6 +102,33 @@ def main():
     )
     submission.columns = ['id', 'value']
     task_io.export_prediction(submission)
+
+    # ===== Cross validation =====
+    from sklearn.model_selection import train_test_split
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+
+    from linear_model import LogisticRegression
+    model = LogisticRegression()
+    model.fit(X_train, y_train)
+    print('Score: {0}'.format(task_io.score(y_test, model.predict(X_test))))
+    costs, scores = model.get_statistics(X_test, y_test, task_io.score)
+    exp = pd.concat(
+        [
+            pd.Series(range(1, len(costs) + 1)),
+            pd.Series(costs).astype(float),
+            pd.Series(scores).astype(float)
+        ],
+        axis=1
+    )
+    exp.columns = ['round', 'cost', 'score']
+    task_io.export_data(exp, './data/exp2.csv')
+
+    # # ===== K-fold validation =====
+    # n_splits = 10
+    # validation = pd.DataFrame(columns=range(1, n_splits + 1))
+    # scores = cross_validation(X, y, task_io.score, n_splits)
+    # validation = validation.append([scores], ignore_index=True)
+    # task_io.export_validation(validation)
 
 
 if __name__ == "__main__":
