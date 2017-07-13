@@ -20,22 +20,10 @@ class LogisticRegression():
     def _gradient(self, theta, X, y):
         error = self._sigmoid(np.dot(X, theta)) - y
         grad = np.dot(error, X) / y.size
-        # grad = np.squeeze(np.asarray(grad))
 
         return grad
 
-    def _gradient_descent(self, theta, X, y, eta=1e-4, upper=10000, gamma=0.95, epsilon=1e-10):
-        # import scipy.optimize as opt
-        # result = opt.minimize(
-        #     fun=self._cost,
-        #     x0=theta,
-        #     args=(X, y),
-        #     method='BFGS',
-        #     jac=self._gradient
-        # )
-        # return result['x']
-
-        # AdaDelta
+    def _gradient_descent(self, theta, X, y, upper=20000, gamma=0.95, epsilon=1e-10):
         accu_grad = 0
         delta = 0
         accu_delta = 0
@@ -43,7 +31,7 @@ class LogisticRegression():
 
         last_cost = 0
         cost = self._cost(theta, X, y)
-        while np.abs(cost - last_cost) > 1e-7 and t < upper:
+        while np.abs(cost - last_cost) > epsilon and t < upper:
             t += 1
             # Update gradient and accumulated gradient
             grad = self._gradient(theta, X, y)
@@ -96,7 +84,7 @@ class LogisticRegression():
         p = self._sigmoid(np.dot(X, self.theta))
         return [1 if x >= 0.5 else 0 for x in p]
 
-    def get_statistics(self, X, y, score):
+    def get_recording(self, X, y, score):
         scores = list()
         for theta in self.thetas:
             p = self._sigmoid(np.dot(X, theta))
