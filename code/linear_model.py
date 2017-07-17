@@ -6,6 +6,7 @@ class LogisticRegression():
     def __init__(self):
         self.costs = list()
         self.thetas = list()
+        self._lambda = 0
 
     def _sigmoid(self, z):
         return 1 / (1 + np.exp(-z))
@@ -15,7 +16,7 @@ class LogisticRegression():
         p1 = self._sigmoid(np.dot(X, theta))
         log_l = (-y) * np.log(p1) - (1 - y) * np.log(1 - p1 + epsilon)
 
-        return log_l.mean()
+        return log_l.sum() + self._lambda * (np.matrix(theta) * np.matrix(theta).T)
 
     def _gradient(self, theta, X, y):
         error = self._sigmoid(np.dot(X, theta)) - y
@@ -23,7 +24,7 @@ class LogisticRegression():
 
         return grad
 
-    def _gradient_descent(self, theta, X, y, upper=20000, gamma=0.95, epsilon=1e-10):
+    def _gradient_descent(self, theta, X, y, upper=15000, gamma=0.95, epsilon=1e-10):
         accu_grad = 0
         delta = 0
         accu_delta = 0
@@ -51,7 +52,7 @@ class LogisticRegression():
 
         return theta
 
-    def fit(self, X, y):
+    def fit(self, X, y, _lambda=0):
         """Compute the fit function for the model.
 
         Parameters
@@ -65,6 +66,7 @@ class LogisticRegression():
         self : returns an instance of self.
         """
         n_params = X.shape[1]
+        self._lambda = _lambda
         self.theta = np.zeros(n_params, dtype=np.float128)
         self.theta = self._gradient_descent(self.theta, X, y)
 

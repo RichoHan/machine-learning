@@ -84,7 +84,7 @@ class Session2TaskIO(TaskIO):
         self.export_data(exp, path)
 
 
-def cross_validation(X, y, score_func, splits=10):
+def cross_validation(X, y, score_func, splits=10, _lambda=0):
     """ Run K-fold validation and return prediction scores.
 
     Parameters
@@ -109,10 +109,11 @@ def cross_validation(X, y, score_func, splits=10):
         y_train, y_test = y.iloc[train_index], y.iloc[test_index]
 
         model = LogisticRegression()
-        model.fit(X_train, y_train)
+        model.fit(X_train, y_train, _lambda)
         scores.append(score_func(y_test, model.predict(X_test)))
 
-    return pd.Series(scores, index=range(1, splits + 1))
+    # return pd.Series(scores, index=range(1, splits + 1))
+    return scores
 
 
 def main():
@@ -130,39 +131,42 @@ def main():
     X = training_data.loc[:, SELECTED_FEATURES]
     y = training_data.loc[:, 'spam']
 
-    # ===== Predict testing data =====
-    column_names = ['id'] + SPAM_FEATURES
-    testing_data = task_io.import_testing_data(names=column_names)
+    # # ===== Predict testing data =====
+    # column_names = ['id'] + SPAM_FEATURES
+    # testing_data = task_io.import_testing_data(names=column_names)
 
-    from linear_model import LogisticRegression
-    model = LogisticRegression()
-    model.fit(X, y)
+    # from linear_model import LogisticRegression
+    # model = LogisticRegression()
+    # model.fit(X, y, 1000)
 
-    X_test = testing_data.loc[:, SELECTED_FEATURES]
-    y_test = pd.Series([0 for i in range(len(X_test))])
-    prediction = model.predict(X_test)
-    task_io.export_prediction(X_test, prediction)
+    # X_test = testing_data.loc[:, SELECTED_FEATURES]
+    # y_test = pd.Series([0 for i in range(len(X_test))])
+    # prediction = model.predict(X_test)
+    # task_io.export_prediction(X_test, prediction)
 
-    costs, scores = model.get_recording(X_test, y_test, task_io.score)
-    task_io.export_recording(costs, scores, './data/submission_exp.csv')
+    # costs, scores = model.get_recording(X_test, y_test, task_io.score)
+    # task_io.export_recording(costs, scores, './data/submission_exp.csv')
 
-    # ===== Cross validation =====
-    from sklearn.model_selection import train_test_split
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, stratify=y)
+    # # ===== Cross validation =====
+    # from sklearn.model_selection import train_test_split
+    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, stratify=y)
 
-    from linear_model import LogisticRegression
-    model = LogisticRegression()
-    model.fit(X_train, y_train)
+    # from linear_model import LogisticRegression
+    # model = LogisticRegression()
+    # model.fit(X_train, y_train)
 
-    costs, scores = model.get_recording(X_test, y_test, task_io.score)
-    task_io.export_recording(costs, scores, './data/validation_exp.csv')
-    print('Score: {0}'.format(task_io.score(y_test, model.predict(X_test))))
+    # costs, scores = model.get_recording(X_test, y_test, task_io.score)
+    # task_io.export_recording(costs, scores, './data/validation_exp.csv')
+    # print('Score: {0}'.format(task_io.score(y_test, model.predict(X_test))))
 
     # ===== K-fold validation =====
     n_splits = 10
-    validation = pd.DataFrame(columns=range(1, n_splits + 1))
-    scores = cross_validation(X, y, task_io.score, n_splits)
-    validation = validation.append([scores], ignore_index=True)
+    data = list()
+    for i in range(0, 6):
+        scores = cross_validation(X, y, task_io.score, n_splits, 10**i)
+        for idx, score in enumerate(scores):
+            validation = data.append([idx + 1, 10**i, score])
+    validation = pd.DataFrame(data, columns=['trial', 'regularization', 'score'])
     task_io.export_validation(validation)
 
 
