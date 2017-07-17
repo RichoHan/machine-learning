@@ -24,7 +24,7 @@ class LogisticRegression():
 
         return grad
 
-    def _gradient_descent(self, theta, X, y, upper=15000, gamma=0.95, epsilon=1e-10):
+    def _gradient_descent(self, theta, X, y, upper=20000, gamma=0.95, epsilon=1e-10):
         accu_grad = 0
         delta = 0
         accu_delta = 0

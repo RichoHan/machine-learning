@@ -24,28 +24,6 @@ SPAM_FEATURES = [
     'capital_run_length_average', 'capital_run_length_longest', 'capital_run_length_total',
 ]
 
-SELECTED_FEATURES = [
-    # Word frequency.
-    'word_freq_make', 'word_freq_address', 'word_freq_all', 'word_freq_3d',
-    'word_freq_our', 'word_freq_over', 'word_freq_remove', 'word_freq_internet',
-    'word_freq_order', 'word_freq_mail', 'word_freq_receive', 'word_freq_will',
-    'word_freq_people', 'word_freq_report', 'word_freq_addresses', 'word_freq_free',
-    'word_freq_business', 'word_freq_email', 'word_freq_you', 'word_freq_credit',
-    'word_freq_your', 'word_freq_font', 'word_freq_000', 'word_freq_money',
-    'word_freq_hp', 'word_freq_hpl', 'word_freq_george', 'word_freq_650',
-    'word_freq_lab', 'word_freq_labs', 'word_freq_telnet', 'word_freq_857',
-    'word_freq_data', 'word_freq_415', 'word_freq_85', 'word_freq_technology',
-    'word_freq_1999', 'word_freq_parts', 'word_freq_pm', 'word_freq_direct',
-    'word_freq_cs', 'word_freq_meeting', 'word_freq_original', 'word_freq_project',
-    'word_freq_re', 'word_freq_edu', 'word_freq_table', 'word_freq_conference',
-
-    # Frequency of special characters.
-    'char_freq_;', 'char_freq_(', 'char_freq_[', 'char_freq_!', 'char_freq_$', 'char_freq_#',
-
-    # Continuous sequence of CAPITALS.
-    'capital_run_length_average', 'capital_run_length_longest', 'capital_run_length_total',
-]
-
 
 class Session2TaskIO(TaskIO):
     def get_processed_training(self):
@@ -128,24 +106,24 @@ def main():
 
     column_names = ['id'] + SPAM_FEATURES + ['spam']
     training_data = task_io.import_training_data(names=column_names)
-    X = training_data.loc[:, SELECTED_FEATURES]
+    X = training_data.loc[:, SPAM_FEATURES]
     y = training_data.loc[:, 'spam']
 
-    # # ===== Predict testing data =====
-    # column_names = ['id'] + SPAM_FEATURES
-    # testing_data = task_io.import_testing_data(names=column_names)
+    # ===== Predict testing data =====
+    column_names = ['id'] + SPAM_FEATURES
+    testing_data = task_io.import_testing_data(names=column_names)
 
-    # from linear_model import LogisticRegression
-    # model = LogisticRegression()
-    # model.fit(X, y, 1000)
+    from linear_model import LogisticRegression
+    model = LogisticRegression()
+    model.fit(X, y, 1000)
 
-    # X_test = testing_data.loc[:, SELECTED_FEATURES]
-    # y_test = pd.Series([0 for i in range(len(X_test))])
-    # prediction = model.predict(X_test)
-    # task_io.export_prediction(X_test, prediction)
+    X_test = testing_data.loc[:, SPAM_FEATURES]
+    y_test = pd.Series([0 for i in range(len(X_test))])
+    prediction = model.predict(X_test)
+    task_io.export_prediction(X_test, prediction)
 
-    # costs, scores = model.get_recording(X_test, y_test, task_io.score)
-    # task_io.export_recording(costs, scores, './data/submission_exp.csv')
+    costs, scores = model.get_recording(X_test, y_test, task_io.score)
+    task_io.export_recording(costs, scores, './data/submission_exp.csv')
 
     # # ===== Cross validation =====
     # from sklearn.model_selection import train_test_split
@@ -159,15 +137,15 @@ def main():
     # task_io.export_recording(costs, scores, './data/validation_exp.csv')
     # print('Score: {0}'.format(task_io.score(y_test, model.predict(X_test))))
 
-    # ===== K-fold validation =====
-    n_splits = 10
-    data = list()
-    for i in range(0, 6):
-        scores = cross_validation(X, y, task_io.score, n_splits, 10**i)
-        for idx, score in enumerate(scores):
-            validation = data.append([idx + 1, 10**i, score])
-    validation = pd.DataFrame(data, columns=['trial', 'regularization', 'score'])
-    task_io.export_validation(validation)
+    # # ===== K-fold validation =====
+    # n_splits = 10
+    # data = list()
+    # for i in range(0, 6):
+    #     scores = cross_validation(X, y, task_io.score, n_splits, 10**i)
+    #     for idx, score in enumerate(scores):
+    #         validation = data.append([idx + 1, 10**i, score])
+    # validation = pd.DataFrame(data, columns=['trial', 'regularization', 'score'])
+    # task_io.export_validation(validation)
 
 
 if __name__ == "__main__":
