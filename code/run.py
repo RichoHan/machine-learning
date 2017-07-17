@@ -115,7 +115,7 @@ def main():
 
     from linear_model import LogisticRegression
     model = LogisticRegression()
-    model.fit(X, y, 1000)
+    model.fit(X, y, 100)
 
     X_test = testing_data.loc[:, SPAM_FEATURES]
     y_test = pd.Series([0 for i in range(len(X_test))])
@@ -131,7 +131,7 @@ def main():
 
     # from linear_model import LogisticRegression
     # model = LogisticRegression()
-    # model.fit(X_train, y_train)
+    # model.fit(X_train, y_train, 100)
 
     # costs, scores = model.get_recording(X_test, y_test, task_io.score)
     # task_io.export_recording(costs, scores, './data/validation_exp.csv')
@@ -140,7 +140,7 @@ def main():
     # # ===== K-fold validation =====
     # n_splits = 10
     # data = list()
-    # for i in range(0, 6):
+    # for i in range(1):
     #     scores = cross_validation(X, y, task_io.score, n_splits, 10**i)
     #     for idx, score in enumerate(scores):
     #         validation = data.append([idx + 1, 10**i, score])

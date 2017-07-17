@@ -4,6 +4,8 @@ import numpy as np
 
 class LogisticRegression():
     def __init__(self):
+        self.feature_means = dict()
+        self.feature_stds = dict()
         self.costs = list()
         self.thetas = list()
         self._lambda = 0
@@ -65,6 +67,12 @@ class LogisticRegression():
         -------
         self : returns an instance of self.
         """
+        # Apply z-score normalization on training set and store means & variance for testing data
+        for feature in X.columns:
+            self.feature_means[feature] = X[feature].mean()
+            self.feature_stds[feature] = X[feature].std(ddof=0)
+        X = X.apply(lambda col: (col - col.mean()) / col.std(ddof=0))
+
         n_params = X.shape[1]
         self._lambda = _lambda
         self.theta = np.zeros(n_params, dtype=np.float128)
@@ -83,6 +91,7 @@ class LogisticRegression():
         C : array, shape = (n_samples,)
             Class label per sample.
         """
+        X = X.apply(lambda col: (col - self.feature_means[col.name]) / self.feature_stds[col.name])
         p = self._sigmoid(np.dot(X, self.theta))
         return [1 if x >= 0.5 else 0 for x in p]
 
