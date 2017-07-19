@@ -71,9 +71,11 @@ def cross_validation(X, y, score_func, splits=10, _lambda=0):
 
     y (ndarray): Target vector.
 
+    _lambda (int): Regularization factor.
+
     Returns
     -------
-    scores : Series, shape = (n_samples,)
+    scores : Series, shape = (splits,)
         score of from each validation round.
     """
     from sklearn.model_selection import StratifiedKFold
@@ -90,13 +92,12 @@ def cross_validation(X, y, score_func, splits=10, _lambda=0):
         model.fit(X_train, y_train, _lambda)
         scores.append(score_func(y_test, model.predict(X_test)))
 
-    # return pd.Series(scores, index=range(1, splits + 1))
     return scores
 
 
 def main():
     # ===== Import training and testing data =====
-    # Read training and testing data, and then separate features from answers for cross-validation.
+    # Read training and testing data, and then separate answers from features.
     task_io = Session2TaskIO(
         train='./data/spam_train.csv',
         test='./data/spam_test.csv',
@@ -134,7 +135,7 @@ def main():
     # model.fit(X_train, y_train, 100)
 
     # costs, scores = model.get_recording(X_test, y_test, task_io.score)
-    # task_io.export_recording(costs, scores, './data/validation_exp.csv')
+    # task_io.export_recording(costs, scores, './data/validation_exp_with_regularization.csv')
     # print('Score: {0}'.format(task_io.score(y_test, model.predict(X_test))))
 
     # # ===== K-fold validation =====

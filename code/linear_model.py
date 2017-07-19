@@ -14,7 +14,22 @@ class LogisticRegression():
         return 1 / (1 + np.exp(-z))
 
     def _cost(self, theta, X, y, epsilon=1e-10):
-        # Calculate -lnL(w, b), add epsilon(1e-10) to avoid zero denominator.
+        """Calculate loss function: -lnL(w, b) with regularization factor _lambda.
+
+        Parameters
+        ----------
+        theta (ndarray):  Vector of the θ parameters.
+
+        X (ndarray): Training vector.
+
+        y (ndarray): Target vector.
+
+        epsilon (float): A small number to avoid zero denominator.
+
+        Returns
+        -------
+        ERROR: float: error generated from the specified theta.
+        """
         p1 = self._sigmoid(np.dot(X, theta))
         log_l = (-y) * np.log(p1) - (1 - y) * np.log(1 - p1 + epsilon)
 
@@ -27,6 +42,26 @@ class LogisticRegression():
         return grad
 
     def _gradient_descent(self, theta, X, y, upper=20000, gamma=0.95, epsilon=1e-10):
+        """Run gradient descent with AdaDelta algorithm.
+
+        Parameters
+        ----------
+        theta (ndarray):  Vector of the θ parameters.
+
+        X (ndarray): Training vector.
+
+        y (ndarray): Target vector.
+
+        upper (int): Maximum number of iteration.
+
+        gamma (float): parameter for AdaDelta.
+
+        epsilon (float): A small number to decide if gradient converged.
+
+        Returns
+        -------
+        THETA: float: error generated from the specified theta.
+        """
         accu_grad = 0
         delta = 0
         accu_delta = 0
@@ -36,6 +71,7 @@ class LogisticRegression():
         cost = self._cost(theta, X, y)
         while np.abs(cost - last_cost) > epsilon and t < upper:
             t += 1
+
             # Update gradient and accumulated gradient
             grad = self._gradient(theta, X, y)
             accu_grad = gamma * accu_grad + (1 - gamma) * grad * grad
@@ -63,6 +99,8 @@ class LogisticRegression():
 
         y (ndarray): Target vector.
 
+        _lambda (int): Regularization factor.
+
         Returns
         -------
         self : returns an instance of self.
@@ -88,7 +126,7 @@ class LogisticRegression():
 
         Returns
         -------
-        C : array, shape = (n_samples,)
+        CLASS : array, shape = (n_samples,)
             Class label per sample.
         """
         X = X.apply(lambda col: (col - self.feature_means[col.name]) / self.feature_stds[col.name])
@@ -97,6 +135,7 @@ class LogisticRegression():
 
     def get_recording(self, X, y, score):
         scores = list()
+        X = X.apply(lambda col: (col - self.feature_means[col.name]) / self.feature_stds[col.name])
         for theta in self.thetas:
             p = self._sigmoid(np.dot(X, theta))
             scores.append(score(y, [1 if x >= 0.5 else 0 for x in p]))
