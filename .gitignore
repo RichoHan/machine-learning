@@ -5,6 +5,10 @@
 .vscode/*
 result.csv
 
+code/data/*
+code/MNIST_data/*
+
+
 ### Python ###
 # Byte-compiled / optimized / DLL files
 __pycache__/
