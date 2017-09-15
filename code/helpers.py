@@ -1,5 +1,12 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import pickle
+
+
+def read_from_pickle(path):
+    with open(path, 'rb') as fo:
+            data = pickle.load(fo, encoding='bytes')
+    return data
 
 
 def convert_images(raw, img_size=32, num_channels=3):
